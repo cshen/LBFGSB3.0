@@ -1,4 +1,11 @@
-%% Non-negative least-squares (NNLS) using L-BFBS-B 
+%% Non-negative least-squares (NNLS) using L-BFBS-B
+% 3.0
+% Size of problem is 13000 x 10000 ==
+%     lbfgsb:  obj is 8055.21, min(x) is       0, err is 0.00e+00, time is  3.921 s
+%
+%
+% 2.1
+%
 %
 % Non-negative least-squares solves the following problem:
 %   $$ \min_x \|Ax \textrm{--} b\|^2_2 \quad\textrm{such that}\quad x \ge 0 $$
@@ -11,13 +18,13 @@
 %   Inderjit Dhillon (http://www.cs.utexas.edu/users/inderjit/public_papers/pqnj_sisc10.pdf),
 %   only work for the overdetermined case.
 %
-% To quote from that paper, 
+% To quote from that paper,
 % "Not surprisingly, some constrained
 % optimization methods have also been applied to solve NNLS. It is interesting
 % to note that for large scale problems these specialized algorithms are outperformed
 % by modern methods such as TRON, LBFGS-B, or the methods of this paper. Curiously
 % this fact has not yet been widely adopted by the wider research community
-% (footnote: This could be because Matlab continues to ship the antiquated 
+% (footnote: This could be because Matlab continues to ship the antiquated
 %   lsqnonneg function, which is an implementation of the original NNLS algorithm of
 %   Lawson and Hanson 1974 )."
 %
@@ -28,10 +35,10 @@
 %
 % mtron, mex wrapper by Christoph Ortner, available at:
 %   http://www.mathworks.com/matlabcentral/fileexchange/14848-mtron
-%   Based on the fortran tron algorithm by Chih-Jen Lin and Jorge Moreé, 
+%   Based on the fortran tron algorithm by Chih-Jen Lin and Jorge Moreé,
 %   "Newton's method for large bound-constrained optimization problems",
 %   SIAM Journal on Optimization, 9(4), pp. 1100-1127, 1999.
-%        http://www-unix.mcs.anl.gov/~more/tron/ 
+%        http://www-unix.mcs.anl.gov/~more/tron/
 %
 % L-BFGS-B.
 %   mex wrapper for v2.1 of the fortran files.
@@ -47,8 +54,8 @@
 % It also compares to some NNLS implementations availabe on the matworks
 %   file exchange. In addition to Fast NNLS (FNNLS), mtron, and LBFGS,
 %   we compare with the following algorithms, all written by Uriel Roque
-%   and based on: Portugal, Judice and Vicente, 
-% "A comparison of block pivoting and interior pointalgorithms for 
+%   and based on: Portugal, Judice and Vicente,
+% "A comparison of block pivoting and interior pointalgorithms for
 % linear least squares problems with nonnegative variables",
 %  Mathematics of Computation, 63(1994), pp. 625-643
 %
@@ -57,7 +64,7 @@
 % blocknnls.m   Similar to activeset.m in performance
 %
 % newton.m  Very slow for large problems
-% 
+%
 % pcnnls.m (predictor-corrector method) Very slow for large problems
 %
 %
@@ -66,8 +73,8 @@
 %% Setup a problem
 
 % The best codes handle N = 20,000 as long as the matrix is very sparse.
-% N   = 3000; M = 4000; % Large scale. Things start to get interesting
-N   = 1000; M = 1500;     % at this size, some algo take a long time!
+N   = 10000; M = 13000; % Large scale. Things start to get interesting
+% N   = 1000; M = 1500;     % at this size, some algo take a long time!
 % N   = 100; M = 150;     % at this size, all algorithms take < 14 seconds
 A   = randn(M,N);
 b   = randn(M,1);
@@ -89,7 +96,7 @@ time = [];
 l  = zeros(N,1);    % lower bound
 u  = inf(N,1);      % there is no upper bound
 tstart=tic;
-fun     = @(x)fminunc_wrapper( x, fcn, grad); 
+fun     = @(x)fminunc_wrapper( x, fcn, grad);
 % Request very high accuracy for this test:
 opts    = struct( 'factr', 1e4, 'pgtol', 1e-8, 'm', 10);
 opts.printEvery     = 5;
@@ -160,11 +167,17 @@ else
     fprintf('Skipping predCorr method because we can''t find it, or it is too slow\n');
 end
 %% Run Matlab's default (Lawson and Hanson) Very slow on large problems
+
+if 0
 tstart=tic;
 xk = lsqnonneg(A,b);
 t=toc(tstart)
 x.lsqnonneg   = xk;
 time.lsqnonneg = t;
+
+end
+
+
 %% Fast NNLS, modification of Lawson and Hanson. Much better for large problems
 if exist( 'fnnls.m', 'file' )
     tstart=tic;
@@ -173,6 +186,8 @@ if exist( 'fnnls.m', 'file' )
     x.fnnls    = xk;
     time.fnnls = t;
 end
+
+
 %% PQN-LBFGS and PQN-BB algorithms of Kim/Sra/Dhillon. Very fast.
 if exist( 'solnls.m', 'file' )
     opt = solopt;
@@ -196,7 +211,7 @@ if exist( 'solnls.m', 'file' )
 
     x.PQN   = out.x;
     time.PQN = t;
-    
+
 end
 %% Results
 % Find the best answer, and use that as the reference.
